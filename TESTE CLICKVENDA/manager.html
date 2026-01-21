@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #333; --accent: #Cca43b; --bg: #fff; }
+        body { font-family: sans-serif; background: var(--primary); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; transition: background 0.5s; }
+        .box { background: white; color: #333; padding: 30px; border-radius: 15px; width: 100%; max-width: 350px; text-align: center; }
+        .cms-logo { max-height: 80px; margin-bottom: 20px; display: block; margin: 0 auto; }
+        input { width: 100%; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .menu-btn { display: flex; align-items: center; gap: 15px; background: #f9f9f9; padding: 20px; margin-bottom: 15px; border-radius: 10px; text-decoration: none; color: #333; font-weight: bold; border-left: 5px solid var(--accent); }
+    </style>
+</head>
+<body>
+    <div id="login-screen" class="box">
+        <img src="" class="cms-logo">
+        <h3 id="cms-title">Acesso Restrito</h3>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="senha" placeholder="Senha">
+        <button onclick="login()">ENTRAR</button>
+    </div>
+    <div id="dashboard" class="box" style="display:none; background: transparent; color: white;">
+        <img src="" class="cms-logo" style="filter: brightness(0) invert(1);">
+        <h2 style="margin-bottom: 30px;">Painel de Controle</h2>
+        <a href="admin.html" class="menu-btn"><i class="fas fa-sliders"></i><div>Administração</div></a>
+        <a href="estoque.html" class="menu-btn"><i class="fas fa-boxes-stacked"></i><div>Estoque Rápido</div></a>
+        <a href="index.html" class="menu-btn"><i class="fas fa-eye"></i><div>Ver Loja</div></a>
+        <button onclick="auth.signOut()" style="background: rgba(255,255,255,0.2); margin-top: 20px;">Sair</button>
+    </div>
+    <script>
+        if(!firebase.apps.length) firebase.initializeApp(SETUP.firebase);
+        const auth = firebase.auth();
+        auth.onAuthStateChanged(u => {
+            document.getElementById('login-screen').style.display = u ? 'none' : 'block';
+            document.getElementById('dashboard').style.display = u ? 'block' : 'none';
+        });
+        function login() { auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('senha').value).catch(e => alert(e.message)); }
+    </script>
+</body>
+</html>
