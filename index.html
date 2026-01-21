@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loja Final</title>
+    <meta name="theme-color" content="#333">
+    <link rel="manifest" href="manifest.json">
+    <title>Loja</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     
@@ -14,78 +17,105 @@
 
     <style>
         :root { --primary: #333; --accent: #Cca43b; --bg: #FDFBF7; --text: #333; }
+        
         body { margin:0; font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--text); padding-bottom:100px; }
         
-        #loader { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:99999; display:flex; justify-content:center; align-items:center; }
+        /* Loader Elegante */
+        #loader { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:99999; display:flex; justify-content:center; align-items:center; transition: opacity 0.5s; }
         
         header { background:white; padding:20px; text-align:center; border-bottom:3px solid var(--accent); }
         .cms-logo { max-height:100px; display:block; margin:0 auto; }
-        
+        #cms-slogan { color:var(--accent); font-weight:600; text-transform:uppercase; font-size:0.8em; margin-top:5px; }
+
+        .hero { text-align:center; padding:30px 20px; }
+        #cms-title { font-size:1.5em; font-weight:700; color:var(--primary); margin:0; }
+        #cms-subtitle { color:#666; margin-top:5px; font-weight:400; }
+
         .grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; padding:0 15px; max-width:800px; margin:0 auto; }
         .card { background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-decoration:none; color:inherit; }
         .card img { width:100%; height:160px; object-fit:cover; }
         .info { padding:10px; text-align:center; }
+        .price { font-weight:700; color:var(--primary); font-size:1.1em; }
         
-        /* Marca D'agua de Versão */
-        .version-tag { background: red; color: white; text-align: center; font-weight: bold; padding: 5px; }
+        #cart-btn { position:fixed; bottom:20px; right:20px; background:#25d366; color:white; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.3); text-decoration:none; }
     </style>
 </head>
 <body>
-    
-    <div class="version-tag">VERSÃO FINAL 5.0 (Se ver isso, atualizou)</div>
-
-    <div id="loader">Carregando...</div>
+    <div id="loader"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary)"></i></div>
 
     <header>
         <img src="" class="cms-logo" alt="Logo">
-        <h3 id="cms-title">Loja</h3>
+        <div id="cms-slogan"></div>
     </header>
 
+    <div class="hero">
+        <h2 id="cms-title">Carregando...</h2>
+        <p id="cms-subtitle"></p>
+    </div>
+
     <div class="grid" id="products"></div>
+    
+    <a href="carrinho.html" id="cart-btn"><i class="fas fa-shopping-bag"></i></a>
+
+    <div id="push-ask" style="display:none; position:fixed; bottom:90px; left:5%; width:90%; background:var(--primary); color:white; padding:15px; border-radius:10px; z-index:9000; text-align:center;">
+        <p style="margin:0 0 10px 0;">Receber ofertas?</p>
+        <button onclick="enablePush()" style="background:var(--accent); border:none; color:white; padding:8px 20px; border-radius:20px; font-weight:bold;">SIM</button>
+        <button onclick="document.getElementById('push-ask').style.display='none'" style="background:transparent; border:1px solid white; color:white; padding:8px 20px; border-radius:20px; margin-left:10px;">Não</button>
+    </div>
 
     <script>
-        // --- CÓDIGO IDÊNTICO AO QUE FUNCIONOU NO DEBUG ---
-        
-        if (!firebase.apps.length) firebase.initializeApp(SETUP.firebase);
         const db = firebase.firestore();
-
+        
+        // --- 1. Carregar Produtos ---
         async function loadP() {
             const g = document.getElementById('products');
             try {
-                // Força limpar cache do Service Worker antigo
-                if(window.navigator && navigator.serviceWorker) {
-                    navigator.serviceWorker.getRegistrations().then( function(registrations) { for(let registration of registrations) { registration.unregister(); } });
-                }
-
                 const s = await db.collection('products').get();
                 
-                g.innerHTML = ''; 
+                g.innerHTML = '';
                 
                 if (s.empty) {
-                    g.innerHTML = '<p style="padding:20px; text-align:center">Sem produtos.</p>';
+                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#888;">Nenhum produto cadastrado.</p>';
+                } else {
+                    s.forEach(doc => {
+                        const p = doc.data();
+                        const imgUrl = p.imageUrl || 'https://via.placeholder.com/300?text=Sem+Foto';
+                        
+                        g.innerHTML += `
+                        <a href="detalhes.html?id=${doc.id}" class="card">
+                            <img src="${imgUrl}" alt="${p.name}">
+                            <div class="info">
+                                <div>${p.name}</div>
+                                <div class="price">¥ ${p.price}</div>
+                            </div>
+                        </a>`;
+                    });
                 }
-
-                s.forEach(doc => {
-                    const p = doc.data();
-                    const img = p.imageUrl || 'https://via.placeholder.com/150';
-                    g.innerHTML += `
-                    <a href="detalhes.html?id=${doc.id}" class="card">
-                        <img src="${img}">
-                        <div class="info">
-                            <div>${p.name}</div>
-                            <b>¥ ${p.price}</b>
-                        </div>
-                    </a>`;
-                });
-                
                 document.getElementById('loader').style.display = 'none';
 
             } catch (error) {
-                alert("Erro: " + error.message);
+                console.error("Erro:", error);
                 document.getElementById('loader').style.display = 'none';
             }
         }
         
+        // --- 2. Push Notification ---
+        async function enablePush() {
+            try {
+                const msg = firebase.messaging();
+                await Notification.requestPermission();
+                const reg = await navigator.serviceWorker.register('sw.js');
+                const t = await msg.getToken({ vapidKey: SETUP.firebase.vapidKey, serviceWorkerRegistration: reg });
+                if(t) {
+                    await db.collection('push_tokens').doc(t).set({token:t});
+                    document.getElementById('push-ask').style.display='none';
+                }
+            } catch(e){ console.log(e); }
+        }
+
+        setTimeout(() => { if(Notification.permission === 'default') document.getElementById('push-ask').style.display='block'; }, 4000);
+        
+        // Inicia
         document.addEventListener('DOMContentLoaded', loadP);
     </script>
 </body>
