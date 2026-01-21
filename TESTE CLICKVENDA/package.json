@@ -1,8 +1,0 @@
-{
-  "name": "clickvenda-cms-backend",
-  "version": "2.0.0",
-  "description": "Backend Push",
-  "dependencies": {
-    "firebase-admin": "^11.11.0"
-  }
-}
