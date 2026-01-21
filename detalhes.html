@@ -3,64 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalhes</title>
+    <title>Detalhes do Produto</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="config.js"></script>
+
     <style>
         :root { --primary: #333; --accent: #Cca43b; --bg: #FDFBF7; --text: #333; }
-        body { font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--text); margin:0; padding-bottom:80px; }
-        .header { padding:15px; position:absolute; top:0; left:0; z-index:10; }
-        .header a { color:var(--primary); background:rgba(255,255,255,0.8); padding:10px; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; text-decoration:none; }
-        #prod-img { width:100%; height:400px; object-fit:cover; }
-        .content { padding:25px; background:var(--bg); position:relative; top:-20px; border-radius:20px 20px 0 0; }
-        .price { font-size:1.8em; color:var(--accent); font-weight:700; margin-bottom:20px; }
-        .action-bar { position:fixed; bottom:0; left:0; width:100%; background:white; padding:15px; display:flex; gap:10px; box-sizing:border-box; }
-        button { flex:1; padding:15px; border:none; border-radius:10px; font-weight:bold; font-size:1em; cursor:pointer; }
-        .btn-add { background:var(--primary); color:white; }
-        .btn-zap { background:#25d366; color:white; }
+        
+        body { margin:0; font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--text); padding-bottom:100px; }
+        
+        /* Botão Voltar Flutuante */
+        .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.9); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; text-decoration: none; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        /* Imagem */
+        .prod-img-container { width: 100%; height: 350px; background: white; }
+        #prod-img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Conteúdo */
+        .content { padding: 25px; background: var(--bg); border-radius: 25px 25px 0 0; margin-top: -25px; position: relative; min-height: 200px; }
+        
+        .title { font-size: 1.5em; font-weight: 700; margin-bottom: 5px; color: var(--primary); }
+        .price { font-size: 1.8em; color: var(--accent); font-weight: 700; margin-bottom: 20px; }
+        .desc { color: #666; line-height: 1.6; font-size: 0.95em; }
+
+        /* --- UX DE OURO: BARRA FIXA --- */
+        .action-bar { 
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            background: white; padding: 15px; 
+            display: flex; gap: 10px; 
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            box-sizing: border-box; 
+            z-index: 100;
+        }
+
+        button { flex: 1; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+
+        .btn-add { background: var(--primary); color: white; }
+        .btn-zap { background: #25d366; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 999; display: flex; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
-    <div class="header"><a href="index.html"><i class="fas fa-arrow-left"></i></a></div>
-    <img id="prod-img" src="">
+
+    <div id="loader"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary)"></i></div>
+
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+
+    <div class="prod-img-container">
+        <img id="prod-img" src="" onerror="this.src='https://via.placeholder.com/400?text=Carregando...'">
+    </div>
+
     <div class="content">
-        <h1 id="prod-name">...</h1>
-        <div class="price" id="prod-price"></div>
-        <p id="prod-desc"></p>
+        <div id="prod-name" class="title">...</div>
+        <div id="prod-price" class="price">...</div>
+        <p id="prod-desc" class="desc">Detalhes do produto carregando...</p>
     </div>
+
     <div class="action-bar">
-        <button class="btn-add" onclick="addToCart()">ADICIONAR</button>
-        <button class="btn-zap" onclick="buyNow()"><i class="fab fa-whatsapp"></i> COMPRAR</button>
+        <button class="btn-add" onclick="addToCart()">
+            ADICIONAR +
+        </button>
+        <button class="btn-zap" onclick="buyNow()">
+            <i class="fab fa-whatsapp"></i> COMPRAR
+        </button>
     </div>
+
     <script>
+        // Inicializa Firebase
+        if (!firebase.apps.length) firebase.initializeApp(SETUP.firebase);
         const db = firebase.firestore();
+
+        // Pega o ID da URL (ex: detalhes.html?id=XYZ)
         const urlParams = new URLSearchParams(window.location.search);
         const pid = urlParams.get('id');
-        let productData = null;
-        async function load() {
-            if(!pid) return;
-            const doc = await db.collection('products').doc(pid).get();
-            if(doc.exists) {
-                productData = doc.data();
-                document.getElementById('prod-img').src = productData.imageUrl;
-                document.getElementById('prod-name').innerText = productData.name;
-                document.getElementById('prod-price').innerText = '¥ ' + productData.price;
+
+        let productData = null; // Guarda os dados do produto
+
+        async function loadDetails() {
+            if(!pid) {
+                alert("Erro: Produto não identificado.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            try {
+                const doc = await db.collection('products').doc(pid).get();
+                
+                if(doc.exists) {
+                    productData = doc.data();
+                    productData.id = doc.id; // Salva o ID junto
+
+                    // Preenche a tela
+                    document.getElementById('prod-img').src = productData.imageUrl || 'https://via.placeholder.com/400';
+                    document.getElementById('prod-name').innerText = productData.name;
+                    document.getElementById('prod-price').innerText = '¥ ' + productData.price;
+                    document.getElementById('prod-desc').innerText = productData.description || "Produto de excelente qualidade. Aproveite a oferta!";
+                    
+                    document.getElementById('loader').style.display = 'none';
+                } else {
+                    alert("Produto não encontrado!");
+                    window.location.href = "index.html";
+                }
+            } catch(e) {
+                console.error(e);
+                alert("Erro de conexão");
+                document.getElementById('loader').style.display = 'none';
             }
         }
+
+        // --- FUNÇÃO ADICIONAR AO CARRINHO ---
         function addToCart() {
+            if(!productData) return;
+
+            // Pega o carrinho atual ou cria um vazio
             let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            
+            // Adiciona o produto
             cart.push(productData);
+            
+            // Salva de volta
             localStorage.setItem('cart', JSON.stringify(cart));
-            alert("Adicionado!");
+            
+            // Feedback Visual (UX)
+            const btn = document.querySelector('.btn-add');
+            const originalText = btn.innerText;
+            btn.innerText = "✅ ADICIONADO";
+            btn.style.background = "#4ade80"; // Verde claro
+            
+            setTimeout(() => {
+                if(confirm("Produto adicionado! Ir para o carrinho?")) {
+                    window.location.href = "carrinho.html";
+                } else {
+                    // Volta o botão ao normal
+                    btn.innerText = originalText;
+                    btn.style.background = "var(--primary)";
+                }
+            }, 500);
         }
+
+        // --- FUNÇÃO COMPRAR DIRETO (WhatsApp) ---
         function buyNow() {
-            const msg = `Olá! Quero comprar: ${productData.name}`;
-            window.location.href = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            if(!productData) return;
+            const msg = `Olá! Tenho interesse no produto: *${productData.name}* (¥ ${productData.price}). Pode me ajudar?`;
+            const link = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            window.open(link, '_blank');
         }
-        load();
+
+        // Inicia
+        document.addEventListener('DOMContentLoaded', loadDetails);
     </script>
 </body>
 </html>
