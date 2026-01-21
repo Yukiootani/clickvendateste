@@ -20,7 +20,7 @@
         
         body { margin:0; font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--text); padding-bottom:100px; }
         
-        /* Loader Elegante */
+        /* Loader */
         #loader { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:99999; display:flex; justify-content:center; align-items:center; transition: opacity 0.5s; }
         
         header { background:white; padding:20px; text-align:center; border-bottom:3px solid var(--accent); }
@@ -66,10 +66,16 @@
     <script>
         const db = firebase.firestore();
         
-        // --- 1. Carregar Produtos ---
         async function loadP() {
             const g = document.getElementById('products');
             try {
+                // --- MATADOR DE CACHE (A Linha Mágica que eu devolvi) ---
+                if(window.navigator && navigator.serviceWorker) {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    for(let reg of regs) { reg.unregister(); }
+                }
+                // -------------------------------------------------------
+
                 const s = await db.collection('products').get();
                 
                 g.innerHTML = '';
@@ -99,7 +105,7 @@
             }
         }
         
-        // --- 2. Push Notification ---
+        // Push
         async function enablePush() {
             try {
                 const msg = firebase.messaging();
@@ -114,8 +120,6 @@
         }
 
         setTimeout(() => { if(Notification.permission === 'default') document.getElementById('push-ask').style.display='block'; }, 4000);
-        
-        // Inicia
         document.addEventListener('DOMContentLoaded', loadP);
     </script>
 </body>
