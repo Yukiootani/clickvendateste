@@ -2,67 +2,187 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Detalhes</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="config.js"></script>
 
     <style>
-        :root { --primary: #333; --accent: #Cca43b; --bg: #FDFBF7; --text: #333; }
-        body { margin:0; font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--text); padding-bottom:100px; }
+        :root { --primary: #333; --accent: #Cca43b; --bg: #fff; --text: #333; }
         
-        /* Botão Voltar */
-        .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 20; text-decoration: none; color: white; backdrop-filter: blur(5px); }
+        body { 
+            margin: 0; 
+            font-family: 'Montserrat', sans-serif; 
+            background: #f0f2f5; /* Fundo cinza no PC */
+            color: var(--text); 
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh;
+        }
 
-        /* --- CARROSSEL (SLIDER) --- */
-        .slider-container { position: relative; width: 100%; height: 380px; background: #eee; }
+        /* --- O SEGREDO DO VISUAL APP (Container Limitado) --- */
+        .app-container {
+            width: 100%;
+            max-width: 480px; /* Tamanho de um celular grande */
+            background: #fff;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            padding-bottom: 90px; /* Espaço para barra fixa */
+        }
+
+        /* Botão Voltar */
+        .back-btn { 
+            position: absolute; 
+            top: 20px; left: 20px; 
+            background: rgba(255,255,255,0.9); 
+            width: 40px; height: 40px; 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            z-index: 20; 
+            text-decoration: none; 
+            color: var(--primary); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* SLIDER OTIMIZADO */
+        .slider-container { 
+            position: relative; 
+            width: 100%; 
+            padding-top: 100%; /* Cria um quadrado perfeito 1:1 */
+            background: #f4f4f4;
+            overflow: hidden;
+        }
         
         .slider { 
+            position: absolute;
+            top: 0; left: 0;
             display: flex; 
             overflow-x: auto; 
             scroll-snap-type: x mandatory; 
             width: 100%; 
             height: 100%;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none; 
         }
-        .slider::-webkit-scrollbar { display: none; /* Chrome */ }
+        .slider::-webkit-scrollbar { display: none; }
         
         .slide { 
             flex: 0 0 100%; 
             scroll-snap-align: center; 
             height: 100%; 
+            position: relative;
         }
-        .slide img { width: 100%; height: 100%; object-fit: cover; }
+        .slide img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; /* Garante que preencha sem esticar */
+        }
 
-        /* Indicadores (Bolinhas) */
-        .dots { position: absolute; bottom: 15px; left: 0; width: 100%; display: flex; justify-content: center; gap: 8px; z-index: 10; }
-        .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.5); border-radius: 50%; }
-        .dot.active { background: white; transform: scale(1.2); }
-
-        /* Vídeo */
-        .video-container { padding: 20px; background: black; margin-bottom: 10px; }
-        video { width: 100%; border-radius: 10px; }
+        /* Indicadores */
+        .dots { 
+            position: absolute; bottom: 15px; left: 0; width: 100%; 
+            display: flex; justify-content: center; gap: 6px; z-index: 10; 
+            pointer-events: none;
+        }
+        .dot { 
+            width: 6px; height: 6px; 
+            background: rgba(255,255,255,0.4); 
+            border-radius: 50%; 
+            transition: 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .dot.active { background: white; transform: scale(1.3); }
 
         /* Conteúdo */
-        .content { padding: 25px; background: var(--bg); border-radius: 25px 25px 0 0; margin-top: -20px; position: relative; z-index: 5; }
-        .title { font-size: 1.6em; font-weight: 700; color: var(--primary); line-height: 1.2; }
-        .price { font-size: 1.8em; color: var(--accent); font-weight: 700; margin: 10px 0; }
-        .desc { color: #555; line-height: 1.6; margin-bottom: 20px; white-space: pre-wrap; }
+        .content { padding: 25px 20px; }
+        
+        .title { 
+            font-size: 1.4em; 
+            font-weight: 600; 
+            color: var(--primary); 
+            line-height: 1.3;
+            margin-bottom: 10px;
+        }
+        
+        .price-tag {
+            display: inline-block;
+            font-size: 1.6em; 
+            color: var(--accent); 
+            font-weight: 700; 
+            margin-bottom: 25px;
+        }
 
-        /* Barra Fixa */
-        .action-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; display: flex; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); box-sizing: border-box; z-index: 100; }
-        button { flex: 1; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; }
-        .btn-add { background: var(--primary); color: white; }
-        .btn-zap { background: #25d366; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .section-title {
+            font-size: 0.85em;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #999;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .desc { 
+            color: #555; 
+            line-height: 1.6; 
+            font-size: 0.95em; 
+            margin-bottom: 30px; 
+            white-space: pre-wrap; 
+        }
+
+        /* Vídeo Estilizado */
+        .video-box {
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        video { width: 100%; display: block; }
+
+        /* Barra Fixa Otimizada para PC e Mobile */
+        .action-bar { 
+            position: fixed; 
+            bottom: 0; 
+            /* O segredo para centralizar no PC: */
+            width: 100%; max-width: 480px; 
+            
+            background: white; 
+            padding: 15px 20px; 
+            display: flex; 
+            gap: 12px; 
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05); 
+            box-sizing: border-box; 
+            z-index: 100;
+        }
+        
+        button { 
+            flex: 1; 
+            padding: 16px; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            font-size: 0.95em; 
+            cursor: pointer; 
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.97); }
+
+        .btn-add { background: #f3f3f3; color: var(--primary); }
+        .btn-zap { background: #25d366; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
+
     </style>
 </head>
 <body>
 
+<div class="app-container">
+    
     <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
 
     <div class="slider-container">
@@ -73,98 +193,84 @@
     </div>
 
     <div class="content">
-        <div class="title" id="prod-name">...</div>
-        <div class="price" id="prod-price">...</div>
+        <div class="title" id="prod-name">Carregando...</div>
+        <div class="price-tag" id="prod-price"></div>
         
-        <div id="video-area" style="display:none; margin: 20px -25px;">
-            <div class="video-container">
-                <h4 style="color:white; margin:0 0 10px 0;"><i class="fas fa-play-circle"></i> Vídeo do Produto</h4>
+        <div class="section-title">Sobre o Produto</div>
+        <div class="desc" id="prod-desc"></div>
+
+        <div id="video-area" style="display:none;">
+            <div class="section-title"><i class="fas fa-play-circle"></i> Vídeo</div>
+            <div class="video-box">
                 <video id="prod-video" controls playsinline></video>
             </div>
         </div>
-
-        <h4 style="margin-bottom:5px; color:#999; font-size:0.9em;">DESCRIÇÃO</h4>
-        <div class="desc" id="prod-desc"></div>
     </div>
 
     <div class="action-bar">
-        <button class="btn-add" onclick="addToCart()">ADICIONAR +</button>
+        <button class="btn-add" onclick="addToCart()">+ SACOLA</button>
         <button class="btn-zap" onclick="buyNow()"><i class="fab fa-whatsapp"></i> COMPRAR</button>
     </div>
 
-    <script>
-        if (!firebase.apps.length) firebase.initializeApp(SETUP.firebase);
-        const db = firebase.firestore();
-        const pid = new URLSearchParams(window.location.search).get('id');
-        let productData = null;
+</div>
 
-        async function load() {
-            if(!pid) return location.href='index.html';
-            
-            const doc = await db.collection('products').doc(pid).get();
-            if(!doc.exists) return location.href='index.html';
-            
-            productData = doc.data();
-            productData.id = doc.id;
+<script>
+    if (!firebase.apps.length) firebase.initializeApp(SETUP.firebase);
+    const db = firebase.firestore();
+    const pid = new URLSearchParams(window.location.search).get('id');
+    let productData = null;
 
-            // 1. Textos
-            document.getElementById('prod-name').innerText = productData.name;
-            document.getElementById('prod-price').innerText = '¥ ' + productData.price;
-            document.getElementById('prod-desc').innerText = productData.description || "Sem descrição.";
+    async function load() {
+        if(!pid) return location.href='index.html';
+        const doc = await db.collection('products').doc(pid).get();
+        if(!doc.exists) return location.href='index.html';
+        
+        productData = doc.data();
+        productData.id = doc.id;
 
-            // 2. Montar Slider (Carrossel)
-            const track = document.getElementById('slider-track');
-            const dots = document.getElementById('slider-dots');
-            track.innerHTML = ''; 
-            dots.innerHTML = '';
+        // Textos
+        document.getElementById('prod-name').innerText = productData.name;
+        document.getElementById('prod-price').innerText = '¥ ' + productData.price;
+        document.getElementById('prod-desc').innerText = productData.description || "Sem descrição.";
 
-            // Junta a Capa + Galeria em uma lista única
-            let images = [productData.imageUrl]; 
-            if(productData.gallery && productData.gallery.length > 0) {
-                images = images.concat(productData.gallery);
-            }
+        // Slider
+        const track = document.getElementById('slider-track');
+        const dots = document.getElementById('slider-dots');
+        track.innerHTML = ''; dots.innerHTML = '';
+        let images = [productData.imageUrl];
+        if(productData.gallery) images = images.concat(productData.gallery);
 
-            // Cria os Slides
-            images.forEach((url, index) => {
-                // Slide HTML
-                track.innerHTML += `<div class="slide"><img src="${url}"></div>`;
-                // Bolinha HTML
-                dots.innerHTML += `<div class="dot ${index===0?'active':''}"></div>`;
-            });
+        images.forEach((url, i) => {
+            track.innerHTML += `<div class="slide"><img src="${url}"></div>`;
+            dots.innerHTML += `<div class="dot ${i===0?'active':''}"></div>`;
+        });
 
-            // Lógica simples das bolinhas ao rolar
-            track.addEventListener('scroll', () => {
-                const scrollLeft = track.scrollLeft;
-                const width = track.offsetWidth;
-                const index = Math.round(scrollLeft / width);
-                document.querySelectorAll('.dot').forEach((d, i) => {
-                    d.classList.toggle('active', i === index);
-                });
-            });
+        // Evento de Scroll do Slider
+        track.addEventListener('scroll', () => {
+            const index = Math.round(track.scrollLeft / track.offsetWidth);
+            document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
+        });
 
-            // 3. Vídeo
-            if(productData.videoUrl) {
-                document.getElementById('video-area').style.display = 'block';
-                document.getElementById('prod-video').src = productData.videoUrl;
-            }
+        // Vídeo
+        if(productData.videoUrl) {
+            document.getElementById('video-area').style.display = 'block';
+            document.getElementById('prod-video').src = productData.videoUrl;
         }
+    }
 
-        function addToCart() {
-            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            cart.push(productData);
-            localStorage.setItem('cart', JSON.stringify(cart));
-            const btn = document.querySelector('.btn-add');
-            btn.innerText = "✅ SALVO";
-            btn.style.background = "#22c55e";
-            setTimeout(() => { if(confirm("Ir para o carrinho?")) location.href='carrinho.html'; }, 300);
-        }
-
-        function buyNow() {
-            const msg = `Olá! Quero ver o produto: *${productData.name}*`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        document.addEventListener('DOMContentLoaded', load);
-    </script>
+    function addToCart() {
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        cart.push(productData);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        const btn = document.querySelector('.btn-add');
+        btn.innerText = "✔ ADICIONADO";
+        btn.style.background = "#dcfce7"; btn.style.color = "#166534";
+        setTimeout(() => { if(confirm("Ir para a sacola?")) location.href='carrinho.html'; }, 300);
+    }
+    function buyNow() {
+        window.open(`https://wa.me/?text=${encodeURIComponent('Quero: '+productData.name)}`, '_blank');
+    }
+    document.addEventListener('DOMContentLoaded', load);
+</script>
 </body>
 </html>
