@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalhes do Produto</title>
+    <title>Detalhes</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
@@ -14,150 +14,157 @@
 
     <style>
         :root { --primary: #333; --accent: #Cca43b; --bg: #FDFBF7; --text: #333; }
-        
         body { margin:0; font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--text); padding-bottom:100px; }
         
-        /* Botão Voltar Flutuante */
-        .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.9); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; text-decoration: none; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        /* Botão Voltar */
+        .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 20; text-decoration: none; color: white; backdrop-filter: blur(5px); }
 
-        /* Imagem */
-        .prod-img-container { width: 100%; height: 350px; background: white; }
-        #prod-img { width: 100%; height: 100%; object-fit: cover; }
+        /* --- CARROSSEL (SLIDER) --- */
+        .slider-container { position: relative; width: 100%; height: 380px; background: #eee; }
+        
+        .slider { 
+            display: flex; 
+            overflow-x: auto; 
+            scroll-snap-type: x mandatory; 
+            width: 100%; 
+            height: 100%;
+            scrollbar-width: none; /* Firefox */
+        }
+        .slider::-webkit-scrollbar { display: none; /* Chrome */ }
+        
+        .slide { 
+            flex: 0 0 100%; 
+            scroll-snap-align: center; 
+            height: 100%; 
+        }
+        .slide img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Indicadores (Bolinhas) */
+        .dots { position: absolute; bottom: 15px; left: 0; width: 100%; display: flex; justify-content: center; gap: 8px; z-index: 10; }
+        .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.5); border-radius: 50%; }
+        .dot.active { background: white; transform: scale(1.2); }
+
+        /* Vídeo */
+        .video-container { padding: 20px; background: black; margin-bottom: 10px; }
+        video { width: 100%; border-radius: 10px; }
 
         /* Conteúdo */
-        .content { padding: 25px; background: var(--bg); border-radius: 25px 25px 0 0; margin-top: -25px; position: relative; min-height: 200px; }
-        
-        .title { font-size: 1.5em; font-weight: 700; margin-bottom: 5px; color: var(--primary); }
-        .price { font-size: 1.8em; color: var(--accent); font-weight: 700; margin-bottom: 20px; }
-        .desc { color: #666; line-height: 1.6; font-size: 0.95em; }
+        .content { padding: 25px; background: var(--bg); border-radius: 25px 25px 0 0; margin-top: -20px; position: relative; z-index: 5; }
+        .title { font-size: 1.6em; font-weight: 700; color: var(--primary); line-height: 1.2; }
+        .price { font-size: 1.8em; color: var(--accent); font-weight: 700; margin: 10px 0; }
+        .desc { color: #555; line-height: 1.6; margin-bottom: 20px; white-space: pre-wrap; }
 
-        /* --- UX DE OURO: BARRA FIXA --- */
-        .action-bar { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: white; padding: 15px; 
-            display: flex; gap: 10px; 
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            box-sizing: border-box; 
-            z-index: 100;
-        }
-
-        button { flex: 1; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.98); }
-
+        /* Barra Fixa */
+        .action-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px; display: flex; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); box-sizing: border-box; z-index: 100; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; }
         .btn-add { background: var(--primary); color: white; }
         .btn-zap { background: #25d366; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
-        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 999; display: flex; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
 
-    <div id="loader"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary)"></i></div>
-
     <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
 
-    <div class="prod-img-container">
-        <img id="prod-img" src="" onerror="this.src='https://via.placeholder.com/400?text=Carregando...'">
+    <div class="slider-container">
+        <div class="slider" id="slider-track">
+            <div class="slide"><img id="main-img" src=""></div>
+        </div>
+        <div class="dots" id="slider-dots"></div>
     </div>
 
     <div class="content">
-        <div id="prod-name" class="title">...</div>
-        <div id="prod-price" class="price">...</div>
-        <p id="prod-desc" class="desc">Detalhes do produto carregando...</p>
+        <div class="title" id="prod-name">...</div>
+        <div class="price" id="prod-price">...</div>
+        
+        <div id="video-area" style="display:none; margin: 20px -25px;">
+            <div class="video-container">
+                <h4 style="color:white; margin:0 0 10px 0;"><i class="fas fa-play-circle"></i> Vídeo do Produto</h4>
+                <video id="prod-video" controls playsinline></video>
+            </div>
+        </div>
+
+        <h4 style="margin-bottom:5px; color:#999; font-size:0.9em;">DESCRIÇÃO</h4>
+        <div class="desc" id="prod-desc"></div>
     </div>
 
     <div class="action-bar">
-        <button class="btn-add" onclick="addToCart()">
-            ADICIONAR +
-        </button>
-        <button class="btn-zap" onclick="buyNow()">
-            <i class="fab fa-whatsapp"></i> COMPRAR
-        </button>
+        <button class="btn-add" onclick="addToCart()">ADICIONAR +</button>
+        <button class="btn-zap" onclick="buyNow()"><i class="fab fa-whatsapp"></i> COMPRAR</button>
     </div>
 
     <script>
-        // Inicializa Firebase
         if (!firebase.apps.length) firebase.initializeApp(SETUP.firebase);
         const db = firebase.firestore();
+        const pid = new URLSearchParams(window.location.search).get('id');
+        let productData = null;
 
-        // Pega o ID da URL (ex: detalhes.html?id=XYZ)
-        const urlParams = new URLSearchParams(window.location.search);
-        const pid = urlParams.get('id');
+        async function load() {
+            if(!pid) return location.href='index.html';
+            
+            const doc = await db.collection('products').doc(pid).get();
+            if(!doc.exists) return location.href='index.html';
+            
+            productData = doc.data();
+            productData.id = doc.id;
 
-        let productData = null; // Guarda os dados do produto
+            // 1. Textos
+            document.getElementById('prod-name').innerText = productData.name;
+            document.getElementById('prod-price').innerText = '¥ ' + productData.price;
+            document.getElementById('prod-desc').innerText = productData.description || "Sem descrição.";
 
-        async function loadDetails() {
-            if(!pid) {
-                alert("Erro: Produto não identificado.");
-                window.location.href = "index.html";
-                return;
+            // 2. Montar Slider (Carrossel)
+            const track = document.getElementById('slider-track');
+            const dots = document.getElementById('slider-dots');
+            track.innerHTML = ''; 
+            dots.innerHTML = '';
+
+            // Junta a Capa + Galeria em uma lista única
+            let images = [productData.imageUrl]; 
+            if(productData.gallery && productData.gallery.length > 0) {
+                images = images.concat(productData.gallery);
             }
 
-            try {
-                const doc = await db.collection('products').doc(pid).get();
-                
-                if(doc.exists) {
-                    productData = doc.data();
-                    productData.id = doc.id; // Salva o ID junto
+            // Cria os Slides
+            images.forEach((url, index) => {
+                // Slide HTML
+                track.innerHTML += `<div class="slide"><img src="${url}"></div>`;
+                // Bolinha HTML
+                dots.innerHTML += `<div class="dot ${index===0?'active':''}"></div>`;
+            });
 
-                    // Preenche a tela
-                    document.getElementById('prod-img').src = productData.imageUrl || 'https://via.placeholder.com/400';
-                    document.getElementById('prod-name').innerText = productData.name;
-                    document.getElementById('prod-price').innerText = '¥ ' + productData.price;
-                    document.getElementById('prod-desc').innerText = productData.description || "Produto de excelente qualidade. Aproveite a oferta!";
-                    
-                    document.getElementById('loader').style.display = 'none';
-                } else {
-                    alert("Produto não encontrado!");
-                    window.location.href = "index.html";
-                }
-            } catch(e) {
-                console.error(e);
-                alert("Erro de conexão");
-                document.getElementById('loader').style.display = 'none';
+            // Lógica simples das bolinhas ao rolar
+            track.addEventListener('scroll', () => {
+                const scrollLeft = track.scrollLeft;
+                const width = track.offsetWidth;
+                const index = Math.round(scrollLeft / width);
+                document.querySelectorAll('.dot').forEach((d, i) => {
+                    d.classList.toggle('active', i === index);
+                });
+            });
+
+            // 3. Vídeo
+            if(productData.videoUrl) {
+                document.getElementById('video-area').style.display = 'block';
+                document.getElementById('prod-video').src = productData.videoUrl;
             }
         }
 
-        // --- FUNÇÃO ADICIONAR AO CARRINHO ---
         function addToCart() {
-            if(!productData) return;
-
-            // Pega o carrinho atual ou cria um vazio
             let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            
-            // Adiciona o produto
             cart.push(productData);
-            
-            // Salva de volta
             localStorage.setItem('cart', JSON.stringify(cart));
-            
-            // Feedback Visual (UX)
             const btn = document.querySelector('.btn-add');
-            const originalText = btn.innerText;
-            btn.innerText = "✅ ADICIONADO";
-            btn.style.background = "#4ade80"; // Verde claro
-            
-            setTimeout(() => {
-                if(confirm("Produto adicionado! Ir para o carrinho?")) {
-                    window.location.href = "carrinho.html";
-                } else {
-                    // Volta o botão ao normal
-                    btn.innerText = originalText;
-                    btn.style.background = "var(--primary)";
-                }
-            }, 500);
+            btn.innerText = "✅ SALVO";
+            btn.style.background = "#22c55e";
+            setTimeout(() => { if(confirm("Ir para o carrinho?")) location.href='carrinho.html'; }, 300);
         }
 
-        // --- FUNÇÃO COMPRAR DIRETO (WhatsApp) ---
         function buyNow() {
-            if(!productData) return;
-            const msg = `Olá! Tenho interesse no produto: *${productData.name}* (¥ ${productData.price}). Pode me ajudar?`;
-            const link = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-            window.open(link, '_blank');
+            const msg = `Olá! Quero ver o produto: *${productData.name}*`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // Inicia
-        document.addEventListener('DOMContentLoaded', loadDetails);
+        document.addEventListener('DOMContentLoaded', load);
     </script>
 </body>
 </html>
