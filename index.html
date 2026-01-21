@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#333">
-    <link rel="manifest" href="manifest.json">
     <title>Loja</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     
@@ -19,8 +19,8 @@
         
         body { margin:0; font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--text); padding-bottom:100px; }
         
-        /* Loader Bonito */
-        #loader { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:9999; display:flex; justify-content:center; align-items:center; transition: opacity 0.5s; }
+        /* Loader com z-index altíssimo para garantir que suma depois */
+        #loader { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:99999; display:flex; flex-direction:column; justify-content:center; align-items:center; transition: opacity 0.5s; }
         
         header { background:white; padding:20px; text-align:center; border-bottom:3px solid var(--accent); }
         .cms-logo { max-height:100px; display:block; margin:0 auto; }
@@ -40,7 +40,9 @@
     </style>
 </head>
 <body>
-    <div id="loader"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary)"></i></div>
+    <div id="loader">
+        <i class="fas fa-spinner fa-spin fa-2x" style="color:gray"></i>
+    </div>
 
     <header>
         <img src="" class="cms-logo" alt="Logo">
@@ -48,7 +50,7 @@
     </header>
 
     <div class="hero">
-        <h2 id="cms-title">Carregando...</h2>
+        <h2 id="cms-title">Carregando Loja...</h2>
         <p id="cms-subtitle"></p>
     </div>
 
@@ -69,14 +71,13 @@
         async function loadP() {
             const g = document.getElementById('products');
             try {
-                // Pega os produtos do banco
+                // Tenta buscar no banco
                 const s = await db.collection('products').get();
                 
-                // Limpa a grade
-                g.innerHTML = '';
+                g.innerHTML = ''; // Limpa
                 
                 if (s.empty) {
-                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#888;">Nenhum produto cadastrado.</p>';
+                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#888;">Loja aberta, mas sem produtos ainda.</p>';
                 } else {
                     s.forEach(doc => {
                         const p = doc.data();
@@ -92,17 +93,27 @@
                         </a>`;
                     });
                 }
-                // Some com o Loader (Sucesso)
+                
+                // SUCESSO: Remove o loader
                 document.getElementById('loader').style.display = 'none';
 
             } catch (error) {
                 console.error("Erro:", error);
-                // Se der erro, tira o loader para a pessoa ver o site mesmo assim
+                // ERRO: Remove o loader também para não travar a tela
                 document.getElementById('loader').style.display = 'none';
             }
         }
         
-        // --- 2. Ativar Push ---
+        // --- 2. TRAVA DE SEGURANÇA (Se travar, libera em 3s) ---
+        setTimeout(() => {
+            const l = document.getElementById('loader');
+            if(l && l.style.display !== 'none') {
+                console.log("Loader demorou muito. Forçando abertura.");
+                l.style.display = 'none';
+            }
+        }, 3000); // 3 segundos
+        
+        // --- 3. Push ---
         async function enablePush() {
             try {
                 const msg = firebase.messaging();
@@ -115,8 +126,7 @@
                 }
             } catch(e){ console.log(e); }
         }
-
-        setTimeout(() => { if(Notification.permission === 'default') document.getElementById('push-ask').style.display='block'; }, 4000);
+        setTimeout(() => { if(Notification.permission === 'default') document.getElementById('push-ask').style.display='block'; }, 5000);
         
         // Inicia
         document.addEventListener('DOMContentLoaded', loadP);
