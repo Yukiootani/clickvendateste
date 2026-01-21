@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loja DEBUG</title>
+    <meta name="theme-color" content="#333">
+    <link rel="manifest" href="manifest.json">
+    <title>Loja</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     
@@ -13,127 +15,111 @@
     <script src="config.js"></script>
 
     <style>
-        /* Estilos CMS */
         :root { --primary: #333; --accent: #Cca43b; --bg: #FDFBF7; --text: #333; }
+        
         body { margin:0; font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--text); padding-bottom:100px; }
         
-        /* Loader */
-        #loader { position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; transition: opacity 0.5s; }
+        /* Loader Bonito */
+        #loader { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:9999; display:flex; justify-content:center; align-items:center; transition: opacity 0.5s; }
         
-        /* Debug Box (Caixa Preta de Erros) */
-        #debug-log { background: black; color: #0f0; padding: 10px; font-family: monospace; margin: 10px; border-radius: 5px; font-size: 12px; display: none; }
-
         header { background:white; padding:20px; text-align:center; border-bottom:3px solid var(--accent); }
         .cms-logo { max-height:100px; display:block; margin:0 auto; }
-        .grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; padding:15px; }
+        #cms-slogan { color:var(--accent); font-weight:600; text-transform:uppercase; font-size:0.8em; margin-top:5px; }
+
+        .hero { text-align:center; padding:30px 20px; }
+        #cms-title { font-size:1.5em; font-weight:700; color:var(--primary); margin:0; }
+        #cms-subtitle { color:#666; margin-top:5px; font-weight:400; }
+
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; padding:0 15px; max-width:800px; margin:0 auto; }
         .card { background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-decoration:none; color:inherit; }
         .card img { width:100%; height:160px; object-fit:cover; }
         .info { padding:10px; text-align:center; }
+        .price { font-weight:700; color:var(--primary); font-size:1.1em; }
+        
+        #cart-btn { position:fixed; bottom:20px; right:20px; background:#25d366; color:white; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.3); text-decoration:none; }
     </style>
 </head>
 <body>
-
-    <div id="loader">
-        <i class="fas fa-spinner fa-spin fa-2x"></i>
-        <p>Carregando Loja...</p>
-        <button onclick="forceCloseLoader()" style="margin-top:20px; padding:10px;">Forçar Entrada</button>
-    </div>
-
-    <div id="debug-log">LOG DE ERROS:<br></div>
+    <div id="loader"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary)"></i></div>
 
     <header>
         <img src="" class="cms-logo" alt="Logo">
-        <div id="cms-slogan">Slogan da Loja</div>
+        <div id="cms-slogan"></div>
     </header>
 
+    <div class="hero">
+        <h2 id="cms-title">Carregando...</h2>
+        <p id="cms-subtitle"></p>
+    </div>
+
     <div class="grid" id="products"></div>
+    
+    <a href="carrinho.html" id="cart-btn"><i class="fas fa-shopping-bag"></i></a>
+
+    <div id="push-ask" style="display:none; position:fixed; bottom:90px; left:5%; width:90%; background:var(--primary); color:white; padding:15px; border-radius:10px; z-index:9000; text-align:center;">
+        <p style="margin:0 0 10px 0;">Receber ofertas?</p>
+        <button onclick="enablePush()" style="background:var(--accent); border:none; color:white; padding:8px 20px; border-radius:20px; font-weight:bold;">SIM</button>
+        <button onclick="document.getElementById('push-ask').style.display='none'" style="background:transparent; border:1px solid white; color:white; padding:8px 20px; border-radius:20px; margin-left:10px;">Não</button>
+    </div>
 
     <script>
-        // --- FUNÇÃO PARA ESCREVER ERRO NA TELA ---
-        function log(msg) {
-            const box = document.getElementById('debug-log');
-            box.style.display = 'block';
-            box.innerHTML += `> ${msg}<br>`;
-            console.log(msg);
-        }
-
-        // --- 1. INICIALIZAÇÃO ---
-        log("Iniciando script...");
-        
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(SETUP.firebase);
-                log("Firebase Conectado.");
-            }
-        } catch(e) {
-            log("ERRO FATAL NO FIREBASE: " + e.message);
-        }
-
         const db = firebase.firestore();
-
-        // --- 2. CARREGAR PRODUTOS ---
-        async function loadProducts() {
-            log("Buscando produtos no banco...");
-            const grid = document.getElementById('products');
-
+        
+        // --- 1. Carregar Produtos ---
+        async function loadP() {
+            const g = document.getElementById('products');
             try {
-                // Busca simples, sem ordenação para evitar travas
-                const snapshot = await db.collection('products').get();
+                // Pega os produtos do banco
+                const s = await db.collection('products').get();
                 
-                log(`Busca concluída. Encontrados: ${snapshot.size} produtos.`);
-
-                if (snapshot.empty) {
-                    grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">Nenhum produto na coleção "products".</p>';
-                    // Se estiver vazio, remove o loader mesmo assim
-                    document.getElementById('loader').style.display = 'none';
-                    return;
+                // Limpa a grade
+                g.innerHTML = '';
+                
+                if (s.empty) {
+                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#888;">Nenhum produto cadastrado.</p>';
+                } else {
+                    s.forEach(doc => {
+                        const p = doc.data();
+                        const imgUrl = p.imageUrl || 'https://via.placeholder.com/300?text=Sem+Foto';
+                        
+                        g.innerHTML += `
+                        <a href="detalhes.html?id=${doc.id}" class="card">
+                            <img src="${imgUrl}" alt="${p.name}">
+                            <div class="info">
+                                <div>${p.name}</div>
+                                <div class="price">¥ ${p.price}</div>
+                            </div>
+                        </a>`;
+                    });
                 }
-
-                grid.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const p = doc.data();
-                    log(`Renderizando: ${p.name}`); // Avisa qual produto achou
-                    
-                    // Garante imagem
-                    let img = p.imageUrl;
-                    if(!img || img.trim() === "") img = "https://via.placeholder.com/300?text=Sem+Foto";
-
-                    grid.innerHTML += `
-                    <a href="detalhes.html?id=${doc.id}" class="card">
-                        <img src="${img}" onerror="this.src='https://via.placeholder.com/300?text=Erro+Img'">
-                        <div class="info">
-                            <b>${p.name}</b><br>
-                            ¥ ${p.price}
-                        </div>
-                    </a>`;
-                });
-
-                // TUDO CERTO? Some com o Loader
+                // Some com o Loader (Sucesso)
                 document.getElementById('loader').style.display = 'none';
 
             } catch (error) {
-                log("ERRO AO BUSCAR PRODUTOS: " + error.message);
-                if(error.message.includes("indexes")) {
-                    log("ALERTA: O Firebase pediu para criar índice. Veja o Console (F12).");
-                }
-                // Se der erro, o loader some para mostrar o erro
+                console.error("Erro:", error);
+                // Se der erro, tira o loader para a pessoa ver o site mesmo assim
                 document.getElementById('loader').style.display = 'none';
             }
         }
-
-        // --- 3. FORÇAR SAÍDA DO LOADER ---
-        function forceCloseLoader() {
-            document.getElementById('loader').style.display = 'none';
+        
+        // --- 2. Ativar Push ---
+        async function enablePush() {
+            try {
+                const msg = firebase.messaging();
+                await Notification.requestPermission();
+                const reg = await navigator.serviceWorker.register('sw.js');
+                const t = await msg.getToken({ vapidKey: SETUP.firebase.vapidKey, serviceWorkerRegistration: reg });
+                if(t) {
+                    await db.collection('push_tokens').doc(t).set({token:t});
+                    document.getElementById('push-ask').style.display='none';
+                }
+            } catch(e){ console.log(e); }
         }
 
-        // Inicia
-        document.addEventListener('DOMContentLoaded', loadProducts);
+        setTimeout(() => { if(Notification.permission === 'default') document.getElementById('push-ask').style.display='block'; }, 4000);
         
-        // Aplica o tema visual se der certo
-        try {
-            if(typeof applyCMS === 'function') applyCMS();
-        } catch(e) { log("Aviso: CMS visual não carregou, usando padrão."); }
-
+        // Inicia
+        document.addEventListener('DOMContentLoaded', loadP);
     </script>
 </body>
 </html>
