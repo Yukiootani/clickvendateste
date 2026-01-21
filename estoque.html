@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #333; }
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+        .app-bar { background: var(--primary); padding: 15px; color: white; display:flex; gap:15px; align-items:center; margin:-20px -20px 20px -20px; }
+        .item { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-del { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="app-bar"><a href="manager.html" style="color:white;"><i class="fas fa-arrow-left"></i></a><h3>Estoque</h3></div>
+    <div id="list">Carregando...</div>
+    <script>
+        if(!firebase.apps.length) firebase.initializeApp(SETUP.firebase);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        auth.onAuthStateChanged(u => { if(!u) window.location.href='manager.html'; else load(); });
+        async function load() {
+            const list = document.getElementById('list'); list.innerHTML='';
+            const snap = await db.collection('products').orderBy('createdAt', 'desc').get();
+            snap.forEach(d => {
+                const p = d.data();
+                list.innerHTML += `<div class="item"><div style="display:flex; align-items:center; gap:10px;"><img src="${p.imageUrl}" style="width:40px; height:40px; border-radius:4px; object-fit:cover;"><div><b>${p.name}</b><br><small>¥ ${p.price}</small></div></div><button class="btn-del" onclick="del('${d.id}')"><i class="fas fa-trash"></i></button></div>`;
+            });
+        }
+        async function del(id) { if(confirm("Apagar?")) { await db.collection('products').doc(id).delete(); load(); } }
+    </script>
+</body>
+</html>
